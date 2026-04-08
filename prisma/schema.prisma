@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Policy {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  content     Json     
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true)
+}
+
+model Control {
+  id          String   @id @default(uuid())
+  framework   String   
+  controlId   String   
+  name        String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  scores      AssessmentScore[]
+}
+
+model EventLog {
+  id          String   @id @default(uuid())
+  action      String   
+  actor       String   
+  resource    String?
+  decision    String   
+  reason      String?
+  timestamp   DateTime @default(now())
+  metadata    Json?    
+}
+
+model EvidenceArtifact {
+  id          String   @id @default(uuid())
+  title       String
+  content     Json     
+  source      String   
+  collectedAt DateTime @default(now())
+}
+
+model AssessmentScore {
+  id          String   @id @default(uuid())
+  controlId   String
+  status      String   
+  justification String?
+  evaluatedAt DateTime @default(now())
+
+  control     Control  @relation(fields: [controlId], references: [id])
+}
+
+model Finding {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  severity    String   // 'High', 'Medium', 'Low'
+  resource    String?  // Target asset or ARN
+  remediation String?  @db.Text
+  details     Json?
+  status      String   @default("Open") // 'Open', 'Resolved', 'Suppressed'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
