@@ -11,9 +11,13 @@ export class EnforcementEngine {
       where: { isActive: true }
     });
 
-    let defaultDecision: EnforcementDecision = {
-      decision: 'Allow',
-      reason: 'Default Allow - No policies matched',
+    // Fail closed: an action that matches no policy is denied, not allowed.
+    // A compliance-enforcement engine that defaults to Allow only enforces
+    // the policies someone remembered to write - the whole point is to deny
+    // by default and require an explicit Allow policy to open anything up.
+    const defaultDecision: EnforcementDecision = {
+      decision: 'Deny',
+      reason: 'Default Deny - No matching Allow policy',
       actionPayload: payload,
     };
 
