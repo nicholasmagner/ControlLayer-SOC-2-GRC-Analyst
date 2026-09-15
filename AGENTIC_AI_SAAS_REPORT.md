@@ -71,7 +71,7 @@ ControlLayer utilizes a modern, serverless-ready architecture optimized for real
 - **Backend API (Next.js App Router):** Handles secure routing, authentication validation, and API bridging for the assessment engine.
 - **Assessment Engine (Node.js/TypeScript):** The deterministic core. Executes evaluation functions against ingested logs to output definitive `AssessmentScore` records.
 - **Data Layer (PostgreSQL via Prisma):** A relational database storing Framework definitions, Policies, EventLogs, EvidenceArtifacts, Findings, and Scores.
-- **AI Engine (`AIEngine`):** A strictly constrained adapter that interfaces with OpenAI/Gemini to provide contextual chat and documentation generation.
+- **AI Engine (`AIEngine`):** A strictly constrained adapter that interfaces with Claude (Anthropic) to provide contextual chat and documentation generation. No tools are exposed to the model, so it can only return text - it has no way to call anything even if it wanted to.
 - **Connectors Layer:** Modules (e.g., AWS SDK) that ingest telemetry and evidence from external environments.
 
 ### Data Flow
@@ -202,7 +202,7 @@ ControlLayer is built to audit, and therefore must be auditable itself.
 ## 11. Integrations
 
 - **Cloud Connectors:** Native support for mapping AWS configurations (EC2, IAM) via `@aws-sdk`.
-- **LLM APIs:** Supports OpenAI and Google Gemini for backend intelligence.
+- **LLM APIs:** Uses the Anthropic Claude API for backend intelligence, selected via `ANTHROPIC_MODEL`.
 - **Database Engine:** PostgreSQL (can be swapped via Prisma if necessary, though Postgres is recommended).
 
 ---

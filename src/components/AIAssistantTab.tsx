@@ -3,27 +3,43 @@
 import { useState } from "react";
 import { Send, Bot, User, Sparkles } from "lucide-react";
 
+type Message = { role: 'user' | 'assistant'; content: string };
+
 export default function AIAssistantTab({ data, selectedFramework }: { data: any, selectedFramework?: string }) {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'Hello! I am the ControlLayer AI Assistant. I can help analyze your compliance posture, explain control failures, and suggest remediation steps. Note: I operate in an assistive capacity only and do not have execution authority.' }
   ]);
   const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    
-    // Optimistic add
-    const newMessages = [...messages, { role: 'user', content: input }];
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text || isSending) return;
+
+    const newMessages: Message[] = [...messages, { role: 'user', content: text }];
     setMessages(newMessages);
     setInput('');
-    
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages([...newMessages, { 
-        role: 'assistant', 
-        content: 'Based on your system data, the requested control is currently under evaluation. Since I operate offline by default, I am returning a simulated analysis: Ensure that privilege escalation routes are restricted and refer to the Control Dashboard for failure logs.' 
+    setIsSending(true);
+
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Request failed');
+
+      setMessages([...newMessages, { role: 'assistant', content: body.reply }]);
+    } catch {
+      setMessages([...newMessages, {
+        role: 'assistant',
+        content: 'Sorry - I could not reach the AI provider just now. The deterministic Controls and Findings tabs remain accurate and unaffected.',
       }]);
-    }, 1000);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -52,8 +68,8 @@ export default function AIAssistantTab({ data, selectedFramework }: { data: any,
                   {msg.role === 'user' ? <User size={16} /> : <Sparkles size={16} />}
                 </div>
                 <div className={`p-4 rounded-2xl text-sm leading-relaxed ${
-                  msg.role === 'user' 
-                    ? 'bg-sky-600 text-white rounded-tr-sm' 
+                  msg.role === 'user'
+                    ? 'bg-sky-600 text-white rounded-tr-sm'
                     : 'bg-slate-800/80 border border-slate-700 text-slate-200 rounded-tl-sm'
                 }`}>
                   {msg.content}
@@ -61,21 +77,35 @@ export default function AIAssistantTab({ data, selectedFramework }: { data: any,
               </div>
             </div>
           ))}
+          {isSending && (
+            <div className="flex justify-start">
+              <div className="flex gap-4 max-w-[80%]">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-sky-600 text-white">
+                  <Sparkles size={16} />
+                </div>
+                <div className="p-4 rounded-2xl text-sm leading-relaxed bg-slate-800/80 border border-slate-700 text-slate-400 rounded-tl-sm">
+                  Thinking...
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="p-4 bg-slate-900/80 border-t border-slate-800">
           <div className="relative flex items-center">
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSend()}
               placeholder="Ask about compliance failures or request SSP generation..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-full py-3 pl-4 pr-12 outline-none focus:border-sky-500 transition-colors text-sm"
+              disabled={isSending}
+              className="w-full bg-slate-950 border border-slate-700 rounded-full py-3 pl-4 pr-12 outline-none focus:border-sky-500 transition-colors text-sm disabled:opacity-60"
             />
-            <button 
+            <button
               onClick={handleSend}
-              className="absolute right-2 p-2 bg-sky-600 hover:bg-sky-500 rounded-full text-white transition-colors"
+              disabled={isSending}
+              className="absolute right-2 p-2 bg-sky-600 hover:bg-sky-500 rounded-full text-white transition-colors disabled:opacity-60"
             >
               <Send size={16} />
             </button>
